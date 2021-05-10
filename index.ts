@@ -1,76 +1,45 @@
-const exec = require("@actions/exec");
-const core = require("@actions/core");
-const github = require("@actions/github");
+import { getBundleSizes } from './lib/helpers'
 
-const humanFileSize = (size: number) => {
-  var i = Math.floor(Math.log(size) / Math.log(1024));
-  return (
-    (size / Math.pow(1024, i)).toFixed(2) +
-    " " +
-    ["B", "kB", "MB", "GB", "TB"][i]
-  );
-};
+const exec = require('@actions/exec')
+const core = require('@actions/core')
+const github = require('@actions/github')
 
-async function run() {
+async function run () {
   try {
-    await exec.exec(
-      "npx react-native bundle --entry-file index.ios.js --bundle-output ios.bundle"
-    );
+    const context = github.context
+    const pullRequest = context.payload.pull_request
 
     await exec.exec(
-      "npx react-native bundle --entry-file index.android.js --bundle-output android.bundle"
-    );
+      'npx react-native bundle --entry-file index.ios.js --bundle-output ios.bundle'
+    )
 
-    let output = "";
-    let error = "";
-    const options: any = {};
-    options.listeners = {
-      stdout: (data: Buffer) => {
-        output += data.toString();
-      },
-      stderr: (data: Buffer) => {
-        error += data.toString();
-      },
-    };
-    await exec.exec("ls -l ios.bundle | awk '{print $5}'", options);
-    const iosOutput = output;
+    await exec.exec(
+      'npx react-native bundle --entry-file index.android.js --bundle-output android.bundle'
+    )
 
-    output = "";
-    await exec.exec("ls -l android.bundle | awk '{print $5}'", options);
-    const androidOutput = output;
+    const outputSizes = await getBundleSizes()
+    const token = core.getInput('token')
 
-    if (iosOutput != "" && androidOutput != "") {
-      const iosBundleSize = humanFileSize(parseInt(iosOutput, 10));
-      const androidBundleSize = humanFileSize(parseInt(androidOutput, 10));
-      const [
-        gitHubRepoOwner,
-        gitHubRepoName,
-      ] = process.env.GITHUB_REPOSITORY.split("/");
-      const gitHubSha = process.env.GITHUB_SHA;
-      const gitHubToken = core.getInput("github-token");
+    const octokit = github.getOctokit(token)
 
-      const octokit = new github.GitHub(gitHubToken);
+    const description = `Android Bundle Size - ${outputSizes.android} \niOS Bundle Size - ${outputSizes.ios}`
 
-      octokit.checks.create({
-        owner: gitHubRepoOwner,
-        repo: gitHubRepoName,
-        name: "React Native Bundle Size",
-        head_sha: gitHubSha,
-        status: "completed",
-        conclusion: "success",
-        output: {
-          title: "React Native Bundle Size",
-          summary: `Android Bundle Size - ${androidBundleSize} \niOS Bundle Size - ${iosBundleSize}`,
-        },
-      });
+    const owner = pullRequest.head.repo.owner.login
+    const repo = pullRequest.head.repo.name
+    const sha = pullRequest.head.sha
+    const state = 'success'
 
-      core.setOutput("time", new Date().toTimeString());
-    } else {
-      core.setFailed();
-    }
+    await octokit.repos.createCommitStatus({
+      description,
+      owner,
+      repo,
+      sha,
+      state,
+      context: 'React Native Bundle Sizes'
+    })
   } catch (error) {
-    core.setFailed(error.message);
+    core.setFailed(error.message)
   }
 }
 
-run();
+run()
