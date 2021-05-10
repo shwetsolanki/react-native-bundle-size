@@ -10,11 +10,11 @@ async function run () {
     const pullRequest = context.payload.pull_request
 
     await exec.exec(
-      'npx react-native bundle --entry-file index.ios.js --bundle-output ios.bundle'
+      'npx react-native bundle --dev false --platform ios --entry-file index.ios.js --bundle-output ios.bundle --reset-cache'
     )
 
     await exec.exec(
-      'npx react-native bundle --entry-file index.android.js --bundle-output android.bundle'
+      'npx react-native bundle --dev false --platform android --entry-file index.android.js --bundle-output android.bundle --reset-cache'
     )
 
     const outputSizes = await getBundleSizes()
@@ -22,7 +22,7 @@ async function run () {
 
     const octokit = github.getOctokit(token)
 
-    const description = `Android Bundle Size - ${outputSizes.android} \niOS Bundle Size - ${outputSizes.ios}`
+    const description = `Android Bundle Size - ${outputSizes.android} | iOS Bundle Size - ${outputSizes.ios}`
 
     const owner = pullRequest.head.repo.owner.login
     const repo = pullRequest.head.repo.name
