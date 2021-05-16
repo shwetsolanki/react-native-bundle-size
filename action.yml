@@ -3,8 +3,25 @@ description: 'Github action to add React Native bundle size as status check'
 author: 'Shwet Solanki'
 inputs:
   token:
+    required: true
     description: 'Github Token'
-runs: 
+  ios-entry-file:
+    description: 'Entry file for iOS, otherwise defaults to index.js'
+    required: false
+    default: 'index.js'
+  android-entry-file:
+    description: 'Entry file for Android, otherwise defaults to index.js'
+    required: false
+    default: 'index.js'
+  include-assets:
+    description: 'Adds assets to the result bundle'
+    required: false
+    default: true
+  include-source-maps:
+    description: 'Adds source maps to the result bundle'
+    required: false
+    default: true
+runs:
   using: 'node12'
   main: 'dist/index.js'
 branding:

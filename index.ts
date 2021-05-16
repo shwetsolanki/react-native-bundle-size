@@ -1,22 +1,34 @@
-import { getBundleSizes } from './lib/helpers'
+import {
+  compressBundleFolders,
+  getBundleScript,
+  getBundleSizes
+} from './lib/helpers'
 
 const exec = require('@actions/exec')
 const core = require('@actions/core')
 const github = require('@actions/github')
 
-async function run () {
+const run = async () => {
   try {
     const context = github.context
     const pullRequest = context.payload.pull_request
 
-    await exec.exec(
-      'npx react-native bundle --dev false --platform ios --entry-file index.ios.js --bundle-output ios.bundle --reset-cache'
+    const iosBundleScript = await getBundleScript(
+      'ios',
+      core.getInput('ios-entry-file'),
+      core.getInput('include-assets') === 'true',
+      core.getInput('include-source-maps') === 'true'
     )
+    await exec.exec(iosBundleScript)
 
-    await exec.exec(
-      'npx react-native bundle --dev false --platform android --entry-file index.android.js --bundle-output android.bundle --reset-cache'
+    const androidBundleScript = await getBundleScript(
+      'android',
+      core.getInput('android-entry-file'),
+      core.getInput('include-assets') === 'true',
+      core.getInput('include-source-maps') === 'true'
     )
-
+    await exec.exec(androidBundleScript)
+    compressBundleFolders()
     const outputSizes = await getBundleSizes()
     const token = core.getInput('token')
 
