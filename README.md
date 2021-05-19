@@ -18,6 +18,10 @@ jobs:
     - uses: shwetsolanki/react-native-bundle-size@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        ios-entry-file: 'index.ios.js'
+        android-entry-file: 'index.android.js'
+        include-assets: 'true'
+        include-source-maps: 'true'
 ```
 
 ## Inputs
@@ -25,6 +29,30 @@ jobs:
 ### `token`
 
 **Required** Your `GITHUB_TOKEN`
+
+### `ios-entry-file`
+
+Your entry JS file for iOS
+
+**Default** index.js
+
+### `android-entry-file`
+
+Your entry JS file for Android
+
+**Default** index.js
+
+### `include-assets`
+
+Adds assets to the result bundle
+
+**Default** true
+
+### `include-source-maps`
+
+Adds source maps to the result bundle
+
+**Default** true
 
 ## RoadMap
 
