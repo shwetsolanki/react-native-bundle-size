@@ -10,7 +10,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.compressBundleFolders = exports.getBundleScript = exports.getBundleSizes = void 0;
+exports.compressBundleFolders = exports.getBundleScript = exports.getFolderPath = exports.getBundleSizes = void 0;
 const pretty_bytes_1 = __importDefault(__nccwpck_require__(5168));
 const fs_1 = __importDefault(__nccwpck_require__(5747));
 const adm_zip_1 = __importDefault(__nccwpck_require__(6761));
@@ -24,8 +24,10 @@ const getBundleSizes = async () => {
     };
 };
 exports.getBundleSizes = getBundleSizes;
+const getFolderPath = (platform) => platform + 'bundle';
+exports.getFolderPath = getFolderPath;
 const getBundleScript = async (platform, entryFile, includeAssets, includeSourceMaps) => {
-    const folderPath = platform + 'bundle';
+    const folderPath = exports.getFolderPath(platform);
     await io.mkdirP(folderPath);
     let bundleScript = `npx react-native bundle --dev false --platform ${platform} --entry-file ${entryFile} --bundle-output ${folderPath}/main.jsbundle --reset-cache`;
     if (includeAssets) {
@@ -10130,10 +10132,24 @@ const run = async () => {
     try {
         const context = github.context;
         const pullRequest = context.payload.pull_request;
-        const iosBundleScript = await helpers_1.getBundleScript('ios', core.getInput('ios-entry-file'), core.getInput('include-assets') === 'true', core.getInput('include-source-maps') === 'true');
-        await exec.exec(iosBundleScript);
-        const androidBundleScript = await helpers_1.getBundleScript('android', core.getInput('android-entry-file'), core.getInput('include-assets') === 'true', core.getInput('include-source-maps') === 'true');
+        const isHermesEnabled = core.getInput('hermes-enabled') === 'true';
+        const includeSourceMaps = core.getInput('include-source-maps') === 'true';
+        const includeAssets = core.getInput('include-assets') === 'true';
+        const androidBundleScript = await helpers_1.getBundleScript('android', core.getInput('android-entry-file'), includeAssets, includeSourceMaps);
         await exec.exec(androidBundleScript);
+        if (isHermesEnabled) {
+            const folderPath = helpers_1.getFolderPath('android');
+            let hermesBundleScript = 'node_modules/hermes-engine/osx-bin/hermesc -emit-binary -out ' + folderPath + '/main.jsbundle.hbc ' + folderPath + '/main.jsbundle';
+            if (includeSourceMaps) {
+                hermesBundleScript += ' -output-source-map';
+            }
+            hermesBundleScript += ' -w';
+            await exec.exec(hermesBundleScript);
+            await exec.exec(`cp ${folderPath}/main.jsbundle.hbc ${folderPath}/main.jsbundle`);
+            await exec.exec(`rm ${folderPath}/main.jsbundle.hbc`);
+        }
+        const iosBundleScript = await helpers_1.getBundleScript('ios', core.getInput('ios-entry-file'), includeAssets, includeSourceMaps);
+        await exec.exec(iosBundleScript);
         helpers_1.compressBundleFolders();
         const outputSizes = await helpers_1.getBundleSizes();
         const token = core.getInput('token');

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.compressBundleFolders = exports.getBundleScript = exports.getBundleSizes = void 0;
+exports.compressBundleFolders = exports.getBundleScript = exports.getFolderPath = exports.getBundleSizes = void 0;
 const pretty_bytes_1 = __importDefault(require("pretty-bytes"));
 const fs_1 = __importDefault(require("fs"));
 const adm_zip_1 = __importDefault(require("adm-zip"));
@@ -17,8 +17,10 @@ const getBundleSizes = async () => {
     };
 };
 exports.getBundleSizes = getBundleSizes;
+const getFolderPath = (platform) => platform + 'bundle';
+exports.getFolderPath = getFolderPath;
 const getBundleScript = async (platform, entryFile, includeAssets, includeSourceMaps) => {
-    const folderPath = platform + 'bundle';
+    const folderPath = exports.getFolderPath(platform);
     await io.mkdirP(folderPath);
     let bundleScript = `npx react-native bundle --dev false --platform ${platform} --entry-file ${entryFile} --bundle-output ${folderPath}/main.jsbundle --reset-cache`;
     if (includeAssets) {

@@ -13,13 +13,15 @@ export const getBundleSizes = async () => {
   }
 }
 
+export const getFolderPath = (platform: 'ios' | 'android') => platform + 'bundle'
+
 export const getBundleScript = async (
   platform: 'ios' | 'android',
   entryFile: string,
   includeAssets: boolean,
   includeSourceMaps: boolean
 ) => {
-  const folderPath = platform + 'bundle'
+  const folderPath = getFolderPath(platform)
   await io.mkdirP(folderPath)
 
   let bundleScript = `npx react-native bundle --dev false --platform ${platform} --entry-file ${entryFile} --bundle-output ${folderPath}/main.jsbundle --reset-cache`

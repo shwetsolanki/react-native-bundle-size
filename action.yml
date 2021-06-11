@@ -21,6 +21,10 @@ inputs:
     description: 'Adds source maps to the result bundle'
     required: false
     default: true
+  hermes-enabled:
+    description: 'If Hermes is enabled for Android'
+    required: false
+    default: true
 runs:
   using: 'node12'
   main: 'dist/index.js'
